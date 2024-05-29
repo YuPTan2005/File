@@ -1,0 +1,107 @@
+import re
+
+def time_increment(start_hour, session, duration_hour, n=0):
+
+    if duration_hour < 12:
+        start_hour += duration_hour
+        if start_hour > 12:
+            start_hour -= 12
+            if session == 'PM':
+                session = 'AM'
+                n += 1
+            elif session == 'AM':
+                session = 'PM'
+        return start_hour, session, n
+
+    elif session == 'AM':
+        session = 'PM'
+        starting_hour, s, num_of_day = time_increment(start_hour, session, duration_hour-12, n)
+        return starting_hour, s, num_of_day
+        
+    elif session == 'PM':
+        session = 'AM'
+        starting_hour, s, num_of_day = time_increment(start_hour, session, duration_hour-12, n+1)
+        return starting_hour, s, num_of_day
+
+
+def add_time(start, duration, day=None):
+    if duration == 0:
+        return start
+    
+    start_list = start.split()
+
+    time = start_list[0]
+    session = start_list[1]
+        
+    time_format = re.compile(r'(\d?\d?\d):(\d\d)')
+
+    matched_time = time_format.search(time)
+    time_in_hour = int(matched_time.group(1))
+    time_in_minute = int(matched_time.group(2))
+    
+    matched_duration = time_format.search(duration)
+    duration_in_hour = int(matched_duration.group(1))
+    duration_in_minute = int(matched_duration.group(2))
+
+    new_time_minute = time_in_minute + duration_in_minute
+
+    day_num = 0
+    if new_time_minute > 60:
+        new_time_minute -= 60
+        time_in_hour += 1
+        if time_in_hour == 12:
+            if session == 'AM':
+                session = 'PM'
+            elif session == 'PM':
+                session = 'AM'
+                day_num += 1
+        if time_in_hour > 12:
+            time_in_hour -= 12
+
+    if duration_in_hour > 12:
+        time_in_hour, session, day_number = time_increment(time_in_hour, session, duration_in_hour)
+        day_num += day_number
+        
+    else:
+        if time_in_hour == 12:
+            time_in_hour += duration_in_hour
+            if time_in_hour > 12:
+                time_in_hour -= 12
+        
+        elif time_in_hour < 12:
+            time_in_hour += duration_in_hour
+            if time_in_hour > 12:
+                time_in_hour -= 12
+                if session == 'AM':
+                    session = 'PM'
+                elif session == 'PM':
+                    session = 'AM'
+                    day_num += 1
+
+    if new_time_minute <= 9:
+        new_time = str(time_in_hour) + ':0' + str(new_time_minute) + ' ' + session
+    else:
+        new_time = str(time_in_hour) + ':' + str(new_time_minute) + ' ' + session
+
+    if day is not None:
+        cap_day = day.lower().capitalize()
+        week = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+        day_idx = week.index(cap_day)
+        if day_num == 0:
+            day_name = cap_day
+        else:
+            day_idx += day_num
+            day_name = week[day_idx % len(week)]
+        new_time = new_time + ', ' + day_name
+
+    if day_num == 0:
+        pass
+    elif day_num == 1:
+        new_time = new_time + ' (next day)'
+    else:
+        new_time = new_time + ' (' + str(day_num) + ' days later)'        
+
+    print(new_time)
+    return new_time 
+
+add_time('8:16 PM', '466:02', 'tuesday')
